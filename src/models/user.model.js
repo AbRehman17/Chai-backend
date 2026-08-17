@@ -51,8 +51,8 @@ const userSchema = new mongoose.Schema(
 )
 userSchema.pre('save', async function (next) {
   if (this.isModified('password'))
-    this.password = bcrypt.hash(this.password, 10)
-  next()
+    this.password = await bcrypt.hash(this.password, 10)
+  // next()
 })
 // arrow function is liye use ni kya q ky wo referece ni leta aur hmain userSchema ka reference chaiye
 // async use kiya hy q ky ye process time leta thora

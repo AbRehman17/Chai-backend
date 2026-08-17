@@ -8,9 +8,13 @@ class apiError extends Error {
     super(message)
     this.statusCode = statusCode
     this.errors = errors
-    this.stack = stack || new Error().stack
     this.data = null
     this.success = false
+    if (stack) {
+      this.stack = stack
+    } else {
+      Error.captureStackTrace(this, this.constructor)
+    }
   }
 }
 export { apiError }
