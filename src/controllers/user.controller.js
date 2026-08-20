@@ -256,6 +256,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params // Koi bhi channel url sy open hota
   if (!username?.trim()) throw new apiError(400, 'Username is missing')
   // Aggregation return array of objects
+  // Aggregation pipeline ka jitna code hy wo directly mongodb sy interact krta no mongoose
   const channel = await User.aggregate([
     {
       // First pipeline
@@ -320,6 +321,59 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     json(new apiResponse(200, channel[0], ' Channel fetched successfully'))
   )
 })
+const getUserWatchHistory = asyncHandle(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectID(req.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: 'videos',
+        localField: 'watchHistory',
+        foreignField: '_id',
+        as: 'watchHistory',
+        pipeline: [
+          {
+            $match: {
+              from: 'users',
+              localField: 'owner',
+              foreignField: '_id',
+              as: 'owner',
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: 'owner',
+              },
+            },
+          },
+        ],
+      },
+    },
+  ])
+  return (
+    res.status(200),
+    json(
+      new apiResponse(
+        200,
+        user[0].watchHistory,
+        ' Watch history fetched successfully',
+      ),
+    )
+  )
+})
 export {
   registerUser,
   loginUser,
@@ -331,4 +385,5 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
+  getUserWatchHistory,
 }
